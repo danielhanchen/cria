@@ -1,5 +1,8 @@
 [build-system]
-requires = ["beautifulsoup4", "lxml", "cchardet"]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
 name = "cria"
 version = "0.1"
 authors = [
@@ -14,7 +17,16 @@ classifiers = [
     "License :: OSI Approved :: Apache-2.0",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+    "beautifulsoup4", "lxml", "cchardet",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/danielhanchen/cria"
 "Bug Tracker" = "https://github.com/danielhanchen/cria/issues"
+
+[tool.setuptools.packages.find]
+exclude = []
+
+[tool.wheel]
+exclude = []
