@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "cria"
 version = "0.1"
 authors = [
-  { name="Daniel Han-Chen", email="danielhanchen@gmail.com" },
+    { name = "Daniel Han-Chen", email = "danielhanchen@gmail.com" },
 ]
 description = "Finetuning LLaMA with cleaned datasets"
 readme = "README.md"
