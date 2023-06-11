@@ -14,15 +14,8 @@ __all__ = [
     "cleanup_code",
 ]
 
-try:
-    import cchardet
-    del cchardet # Just for forced importing
-    from lxml.etree import HTMLParser
-    from bs4 import BeautifulSoup, NavigableString, Comment, Doctype
-except:
-    raise RuntimeError("cchardet, lxml and bs4 must be installed!")
-pass
-
+from lxml.etree import HTMLParser
+from bs4 import BeautifulSoup, NavigableString, Comment, Doctype
 HTMLParser = HTMLParser(remove_blank_text = True, recover = True, remove_comments = True, remove_pis = True)
 
 from re import compile as RE_COMPILE, IGNORECASE as RE_IGNORECASE
