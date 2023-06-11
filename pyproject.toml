@@ -1,6 +1,5 @@
 [build-system]
-requires = ["setuptools", "beautifulsoup4", "lxml", "cchardet"]
-build-backend = "setuptools.build_meta"
+requires = ["beautifulsoup4", "lxml", "cchardet"]
 name = "cria"
 version = "0.1"
 authors = [
