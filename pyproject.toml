@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools", "beautifulsoup4", "lxml", "cchardet"]
+build-backend = "setuptools.build_meta"
+name = "cria"
+version = "0.1"
+authors = [
+  { name="Daniel Han-Chen", email="danielhanchen@gmail.com" },
+]
+description = "Finetuning LLaMA with cleaned datasets"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache-2.0",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/danielhanchen/cria"
+"Bug Tracker" = "https://github.com/danielhanchen/cria/issues"
