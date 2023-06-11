@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -11,14 +11,16 @@ authors = [
 description = "Finetuning LLaMA with cleaned datasets"
 readme = "README.md"
 requires-python = ">=3.9"
-license = "Apache-2.0"
+license = {file = "LICENSE.txt"}
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache-2.0",
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "beautifulsoup4", "lxml", "cchardet",
+    "beautifulsoup4",
+    "lxml",
+    "cchardet",
 ]
 
 [project.urls]
