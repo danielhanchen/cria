@@ -1,4 +1,5 @@
 """
+    Copyright Daniel Han-Chen
     Inspired from https://github.com/matthewwithanm/python-markdownify
     and https://github.com/lm-sys/FastChat.
 
@@ -9,15 +10,13 @@
     See https://thehftguy.com/2020/07/28/making-beautifulsoup-parsing-10-times-faster.
 """
 __all__ = [
-    "markdownify_fast",
     "markdownify",
+    "markdownify_fast",
     "cleanup_code",
 ]
 
-from lxml.etree import HTMLParser
+from ._builder import HTMLParserTreeBuilder_Fast, LXMLTreeBuilder_Fast
 from bs4 import BeautifulSoup, NavigableString, Comment, Doctype
-HTMLParser = HTMLParser(remove_blank_text = True, recover = True, remove_comments = True, remove_pis = True)
-
 from re import compile as RE_COMPILE, IGNORECASE as RE_IGNORECASE
 WHITESPACE_RE    = RE_COMPILE(r'[\t ]+')
 REMOVE_HTML_TAGS = RE_COMPILE("</?[a-z]{3,}[^>]{0,}>")
@@ -62,7 +61,7 @@ def convert_b(el, text, as_inline):
     prefix = " " if text[0]  == " " else ""
     suffix = " " if text[-1] == " " else ""
     if not (text := text.strip()): return ""
-    return f'{prefix}**{text}**{suffix}'
+    return f"{prefix}**{text}**{suffix}"
 pass
 
 def convert_code(el, text, as_inline):
@@ -154,7 +153,8 @@ pass
 def convert_tr(el, text, as_inline):
     th = 0
     td = 0
-    for children in el.descendants:
+    descendants = el.descendants
+    for children in descendants:
         th += (children.name == "th")
         td += (children.name == "td")
     pass
@@ -317,12 +317,12 @@ pass
 
 def markdownify_fast(text):
     text = cleanup_code(text)
-    soup = BeautifulSoup(text, "lxml", parser = HTMLParser)
+    soup = BeautifulSoup(text, "lxml", builder = LXMLTreeBuilder_Fast)
     return process_tag(soup, as_inline = False, children_only = True)
 pass
 
 def markdownify(text):
     text = cleanup_code(text)
-    soup = BeautifulSoup(text, "html.parser")
+    soup = BeautifulSoup(text, "lxml")
     return process_tag(soup, as_inline = False, children_only = True)
 pass
