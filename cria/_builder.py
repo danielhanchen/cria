@@ -7,23 +7,15 @@ __all__ = [
     "LXMLTreeBuilder_Fast",
 ]
 
+NULL_FUNCTION = lambda *args: None
+
 from bs4.builder import ParserRejectedMarkup
 from bs4.builder._htmlparser import BeautifulSoupHTMLParser, HTMLParserTreeBuilder
 from bs4.builder._lxml import LXMLTreeBuilder, LXMLTreeBuilderForXML
 from lxml.etree import HTMLParser as LXMLHTMLParser, ParserError as LXMLParserError
-from functools import partial
-from sys import maxsize as MAX_SIZE_T
-
-LXMLHTMLParser = partial(LXMLHTMLParser,
-                         recover           = True,
-                         remove_blank_text = True,
-                         remove_comments   = True,
-                         remove_pis        = True)
-NULL_FUNCTION = lambda *args: None
-
 
 class BeautifulSoupHTMLParser_Fast(BeautifulSoupHTMLParser):
-    REPLACE = "ignore"
+    REPLACE = "ignore" # Default = replace. We follow LXML's default, which is ignore.
     handle_comment = NULL_FUNCTION
     handle_decl    = NULL_FUNCTION
     handle_pi      = NULL_FUNCTION
@@ -41,6 +33,14 @@ class HTMLParserTreeBuilder_Fast(HTMLParserTreeBuilder):
     pass
 pass
 
+
+from functools import partial
+from sys import maxsize as MAX_SIZE_T
+LXMLHTMLParser = partial(LXMLHTMLParser,
+                         recover           = True,
+                         remove_blank_text = True,
+                         remove_comments   = True,
+                         remove_pis        = True)
 
 class LXMLTreeBuilderForXML_Fast(LXMLTreeBuilderForXML):
     CHUNK_SIZE = MAX_SIZE_T

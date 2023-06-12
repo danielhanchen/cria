@@ -16,9 +16,9 @@ __all__ = [
 ]
 
 from ._builder import HTMLParserTreeBuilder_Fast, LXMLTreeBuilder_Fast
-from bs4 import BeautifulSoup, NavigableString, Comment, Doctype
+from bs4 import BeautifulSoup, NavigableString
 from re import compile as RE_COMPILE, IGNORECASE as RE_IGNORECASE
-WHITESPACE_RE    = RE_COMPILE(r'[\t ]+')
+WHITESPACE_RE    = RE_COMPILE(r"[\t ]+")
 REMOVE_HTML_TAGS = RE_COMPILE("</?[a-z]{3,}[^>]{0,}>")
 CHECK_CODY_CODE  = RE_COMPILE(r'^[\s]{0,}(?:class="([^\s]{0,10})")?'\
                               r'>?([^\s]{0,10})(?:copy[\s]{0,}code)+', flags = RE_IGNORECASE)
@@ -29,6 +29,36 @@ SPEECH_RE   = r'\"'
 PRE_TAG     = "<pre"
 PRE_END_TAG = "</pre>"
 IS_NESTED_NODE_SET  = frozenset(('ol', 'ul', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',))
+
+def cleanup_code(text):
+    """ First cleanup code sections by deleting <span> <div> etc """
+    i = 0
+    while (code_start := text.find(PRE_TAG, i)) != -1:
+
+        start = code_start + len(PRE_TAG)
+        if (code_end := text.find(PRE_END_TAG, start)) == -1: break
+        code = REMOVE_HTML_TAGS.sub("", text[start : code_end])
+
+        """ Check if Copy Code exists """
+        pre = PRE_TAG
+        if (attrs := CHECK_CODY_CODE.match(code)):
+            # pythonCopy Code takes priority over class="python"
+            if (language := attrs.group(2) or attrs.group(1)):
+                pre = f'<pre class="{language}">'
+                code = code[attrs.span(0)[1]:]
+
+        text = f"{text[:code_start]}{pre}{code}{text[code_end:]}"
+        i = code_start + len(pre) + len(code) + len(PRE_END_TAG)
+    pass
+    return text
+pass
+
+def convert_pre(el, text, as_inline):
+    if not text: return ""
+    code_language = el.attrs.get("class")
+    code_language = "" if not code_language else code_language[0]
+    return f"\n```{code_language}\n{text}\n```\n"
+pass
 
 def convert_h1(el, text, as_inline):
     text = text.strip() # [Fix newline start in header tags] (https://github.com/matthewwithanm/python-markdownify/pull/89)
@@ -105,7 +135,7 @@ def convert_list(el, text, as_inline):
     _next = el.next_sibling
     while el:
         if el.name == "li":
-             # remove trailing newline since nested
+            # remove trailing newline since nested
             return f"\n{NEWLINE.join(f'{TAB}{x}' for x in text.split(NEWLINE)).rstrip() if text else ''}"
         pass
         el = el.parent
@@ -133,13 +163,6 @@ def convert_li(el, text, as_inline):
         else:        bullet = "-"
     pass
     return f"{bullet} {text.strip()}\n"
-pass
-
-def convert_pre(el, text, as_inline):
-    if not text: return ""
-    code_language = el.attrs.get("class")
-    code_language = "" if not code_language else code_language[0]
-    return f"\n```{code_language}\n{text}\n```\n"
 pass
 
 def convert_sub(el, text, as_inline):
@@ -287,31 +310,6 @@ def process_text(el):
     if ((name == "li") and (not _next or _next.name == "ul" or _next.name == "ol")):
         text = text.rstrip()
 
-    return text
-pass
-
-def cleanup_code(text):
-    """ First cleanup code sections by deleting <span> <div> etc """
-    i = 0
-    while (code_start := text.find(PRE_TAG, i)) != -1:
-
-        start = code_start + len(PRE_TAG)
-        if (code_end := text.find(PRE_END_TAG, start)) == -1: break
-        code = REMOVE_HTML_TAGS.sub("", text[start : code_end])
-
-        """ Check if Copy Code exists """
-        if (attrs := CHECK_CODY_CODE.match(code)):
-            # pythonCopy Code takes priority over class="python"
-            language = attrs.group(2) or attrs.group(1)
-            pre = f'<pre class="{language}">'
-            code = code[attrs.span(0)[1]:]
-        else:
-            pre = PRE_TAG
-        pass
-
-        text = f"{text[:code_start]}{pre}{code}{text[code_end:]}"
-        i = code_start + len(pre) + len(code) + len(PRE_END_TAG)
-    pass
     return text
 pass
 
