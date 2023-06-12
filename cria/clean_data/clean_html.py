@@ -40,13 +40,15 @@ def cleanup_code(text : str) -> str:
         code = REMOVE_HTML_TAGS.sub("", text[start : code_end])
 
         """ Check if Copy Code exists """
-        pre = PRE_TAG
         if (attrs := CHECK_CODY_CODE.match(code)):
             # pythonCopy Code takes priority over class="python"
-            if (language := attrs.group(2) or attrs.group(1)):
-                pre = f'<pre class="{language}">'
-                code = code[attrs.span(0)[1]:]
-
+            language = attrs.group(2) or attrs.group(1) or ""
+            pre = f'<pre class="{language}">'
+            code = code[attrs.span(0)[1]:]
+        else:
+            pre = PRE_TAG
+        pass
+        
         text = f"{text[:code_start]}{pre}{code}{text[code_end:]}"
         i = code_start + len(pre) + len(code) + len(PRE_END_TAG)
     pass
