@@ -43,7 +43,7 @@ def multiprocessing(process  : Callable,
     n = len(data)
     all_datas = [None]*n
     with ProgressBar(total = n) as progress_bar, ProcessPoolExecutor() as executor:
-        futures = { executor.submit(process, *x) : k for k, x in enumerate(data) }
+        futures = { executor.submit(process, x) : k for k, x in enumerate(data) }
         for future in As_Completed(futures):
             try:
                 all_datas[futures[future]] = future.result()
