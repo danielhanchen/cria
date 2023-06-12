@@ -30,7 +30,7 @@ PRE_TAG     = "<pre"
 PRE_END_TAG = "</pre>"
 IS_NESTED_NODE_SET  = frozenset(('ol', 'ul', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',))
 
-def cleanup_code(text):
+def cleanup_code(text : str) -> str:
     """ First cleanup code sections by deleting <span> <div> etc """
     i = 0
     while (code_start := text.find(PRE_TAG, i)) != -1:
@@ -313,13 +313,13 @@ def process_text(el):
     return text
 pass
 
-def markdownify_fast(text):
+def markdownify_fast(text : str) -> str:
     text = cleanup_code(text)
     soup = BeautifulSoup(text, "lxml", builder = LXMLTreeBuilder_Fast)
     return process_tag(soup, as_inline = False, children_only = True)
 pass
 
-def markdownify(text):
+def markdownify(text : str) -> str:
     text = cleanup_code(text)
     soup = BeautifulSoup(text, "html.parser", builder = HTMLParserTreeBuilder_Fast)
     return process_tag(soup, as_inline = False, children_only = True)
