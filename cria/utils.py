@@ -12,6 +12,10 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from concurrent.futures import as_completed as As_Completed
 from tqdm import tqdm as ProgressBar
 from typing import Callable, Sequence
+from psutil import cpu_count as CPU_COUNT
+from random import shuffle as RANDOM_SHUFFLE
+N_CPUS = CPU_COUNT(logical = False)
+del CPU_COUNT
 
 def multithreading(download : Callable,
                    process  : Callable,
@@ -21,9 +25,10 @@ def multithreading(download : Callable,
     """
     n = len(data)
     all_datas = [None]*n
-    with ProgressBar(total = n) as progress_bar, ThreadPoolExecutor() as executor:
+    with ProgressBar(total = n) as progress_bar, ThreadPoolExecutor(N_CPUS*5) as executor:
         futures = { executor.submit(download, *x) : k for k, x in enumerate(data) }
-        for future in As_Completed(futures):
+        iterator = As_Completed(futures)
+        for future in iterator:
             try:
                 all_datas[futures[future]] = process(*future.result())
                 progress_bar.update(1)
@@ -35,6 +40,10 @@ def multithreading(download : Callable,
     return all_datas
 pass
 
+def Caller(function):
+    def _call(index, data): return index, function(data)
+pass
+
 def multiprocessing(process  : Callable,
                     data     : Sequence) -> Sequence:
     """
@@ -42,15 +51,15 @@ def multiprocessing(process  : Callable,
     """
     n = len(data)
     all_datas = [None]*n
-    with ProgressBar(total = n) as progress_bar, ProcessPoolExecutor() as executor:
-        futures = { executor.submit(process, x) : k for k, x in enumerate(data) }
-        for future in As_Completed(futures):
-            try:
-                all_datas[futures[future]] = future.result()
-                progress_bar.update(1)
-            except Exception as error:
-                executor.shutdown(wait = False, cancel_futures = True)
-                raise RuntimeError(repr(error))
+    process = Caller(process)
+    data = list(enumerate(data))
+    RANDOM_SHUFFLE(data) # Must shuffle to counteract imbalanced datasets
+
+    with ProgressBar(total = n) as progress_bar, ProcessPoolExecutor(N_CPUS) as executor:
+        iterator = executor.map(process, data, chunksize = max(n // N_CPUS, 1))
+        for (index, result) in iterator:
+            all_datas[index] = result
+            progress_bar.update(1)
         pass
     pass
     return all_datas
