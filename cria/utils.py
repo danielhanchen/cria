@@ -1,6 +1,9 @@
 """
     Copyright Daniel Han-Chen
     Inspired from https://docs.python.org/3/library/concurrent.futures.html
+
+    Pathos interestingly works inside interative modes, and does NOT
+    need if __name__ == "__main__" to work!
 """
 
 __all__ = [
@@ -8,14 +11,15 @@ __all__ = [
     "multiprocessing",
 ]
 
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from concurrent.futures import as_completed as As_Completed
-from tqdm import tqdm as ProgressBar
 from typing import Callable, Sequence
+from tqdm import tqdm as ProgressBar
 from psutil import cpu_count as CPU_COUNT
-from random import shuffle as RANDOM_SHUFFLE
 N_CPUS = CPU_COUNT(logical = False)
 del CPU_COUNT
+from inspect import signature
+
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed as As_Completed
 
 def multithreading(download : Callable,
                    process  : Callable,
@@ -23,15 +27,30 @@ def multithreading(download : Callable,
     """
         Used mainly for IO bound tasks, like downloading files.
     """
+    DOWNLOAD_SINGULAR = len(signature(download).parameters) == 1
+    PROCESS_SINGULAR  = len(signature(process ).parameters) == 1
     n = len(data)
+    if n == 0: return []
+    if n == 1:
+        x = download(data[0]) if DOWNLOAD_SINGULAR else download(*data[0])
+        return [ process(x) if PROCESS_SINGULAR else process(*x) ]
+    pass
+
     all_datas = [None]*n
-    with ProgressBar(total = n) as progress_bar, ThreadPoolExecutor(N_CPUS*5) as executor:
-        futures = { executor.submit(download, *x) : k for k, x in enumerate(data) }
-        iterator = As_Completed(futures)
-        for future in iterator:
+    with ProgressBar(total = n) as progress, ThreadPoolExecutor(N_CPUS*5) as executor:
+
+        if DOWNLOAD_SINGULAR:
+            futures = { executor.submit(download,  x) : k for k, x in enumerate(data) }
+        else:
+            futures = { executor.submit(download, *x) : k for k, x in enumerate(data) }
+        pass
+
+        for future in As_Completed(futures):
             try:
-                all_datas[futures[future]] = process(*future.result())
-                progress_bar.update(1)
+                result = future.result()
+                result = process(result) if PROCESS_SINGULAR else process(*result)
+                all_datas[futures[future]] = result
+                progress.update(1)
             except Exception as error:
                 executor.shutdown(wait = False, cancel_futures = True)
                 raise RuntimeError(repr(error))
@@ -40,28 +59,34 @@ def multithreading(download : Callable,
     return all_datas
 pass
 
-def Caller(function):
-    def _call(index, data): return index, function(data)
-    return _call
-pass
+
+from pathos.multiprocessing import ProcessPool
 
 def multiprocessing(process  : Callable,
                     data     : Sequence) -> Sequence:
     """
         Used mainly for compute bound tasks.
     """
+    PROCESS_SINGULAR = len(signature(process).parameters) == 1
     n = len(data)
-    all_datas = [None]*n
-    process = Caller(process)
-    data = list(enumerate(data))
-    RANDOM_SHUFFLE(data) # Must shuffle to counteract imbalanced datasets
+    if n == 0: return []
+    if n == 1:
+        x = data[0]
+        return [ process(x) if PROCESS_SINGULAR else process(*x) ]
+    pass
 
-    with ProgressBar(total = n) as progress_bar, ProcessPoolExecutor(N_CPUS) as executor:
-        iterator = executor.map(process, data, chunksize = max(n // N_CPUS, 1))
-        for (index, result) in iterator:
-            all_datas[index] = result
-            progress_bar.update(1)
+    first_item = data[0]
+    CHUNKSIZE = max(len(data) // N_CPUS, 1)
+
+    with ProcessPool(N_CPUS) as pool:
+        if PROCESS_SINGULAR:
+            all_datas = pool.imap(process,  data, chunksize = CHUNKSIZE)
+        else:
+            n_parameters = len(first_item)
+            data = [[x[p] for x in data] for p in range(n_parameters)]
+            all_datas = pool.imap(process, *data, chunksize = CHUNKSIZE)
         pass
+        all_datas = list(ProgressBar(all_datas, total = n))
     pass
     return all_datas
 pass

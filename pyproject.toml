@@ -21,6 +21,9 @@ dependencies = [
     "beautifulsoup4",
     "lxml",
     "cchardet",
+    "psutil",
+    "pathos",
+    "tqdm",
 ]
 
 [project.urls]
