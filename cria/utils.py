@@ -42,6 +42,7 @@ pass
 
 def Caller(function):
     def _call(index, data): return index, function(data)
+    return _call
 pass
 
 def multiprocessing(process  : Callable,
