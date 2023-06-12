@@ -1,2 +1,2 @@
 
-from .html_to_markdown import *
+from .clean_html import *

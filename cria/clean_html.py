@@ -239,7 +239,8 @@ def process_tag(node, as_inline, children_only = False):
 
     # Remove whitespace-only textnodes in purely nested nodes
     if name in IS_NESTED_NODE_SET:
-        for el in node.children:
+        children = node.children
+        for el in children:
             # Only extract (remove) whitespace-only text node if any of the conditions is true:
             # - el is the first element in its parent
             # - el is the last  element in its parent
@@ -251,10 +252,9 @@ def process_tag(node, as_inline, children_only = False):
                 el.extract()
 
     # Convert the children first
-    for el in node.children:
-        if not el or isinstance(el, (Comment, Doctype)):
-            continue
-        elif isinstance(el, NavigableString):
+    children = node.children
+    for el in children:
+        if isinstance(el, NavigableString):
             text += process_text(el)
         else:
             text += process_tag (el, convert_children_as_inline)
@@ -323,6 +323,6 @@ pass
 
 def markdownify(text):
     text = cleanup_code(text)
-    soup = BeautifulSoup(text, "lxml")
+    soup = BeautifulSoup(text, "html.parser", builder = HTMLParserTreeBuilder_Fast)
     return process_tag(soup, as_inline = False, children_only = True)
 pass
