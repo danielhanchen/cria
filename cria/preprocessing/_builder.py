@@ -46,7 +46,8 @@ class LXMLTreeBuilder_Fast(LXMLTreeBuilder, LXMLTreeBuilderForXML_Fast):
                                 recover           = True,
                                 remove_blank_text = True,
                                 remove_comments   = True,
-                                remove_pis        = True)
+                                remove_pis        = True,
+                                target            = self)
         parser.feed(markup)
         parser.close()
         self.parser = parser
