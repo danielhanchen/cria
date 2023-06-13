@@ -288,9 +288,9 @@ def markdownify(text              : str,
                 fast              : bool = False,
                 clean_whitespaces : bool = True) -> str:
     if fast:
-        soup = BeautifulSoup(text, "lxml",        )
+        soup = BeautifulSoup(text, "lxml",        builder = LXMLTreeBuilder_Fast)
     else:
-        soup = BeautifulSoup(text, "html.parser", )
+        soup = BeautifulSoup(text, "html.parser", builder = HTMLParserTreeBuilder_Fast)
     return process_tag(soup, as_inline = False, children_only = True, clean_whitespaces = clean_whitespaces)
 pass
 
