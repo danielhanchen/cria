@@ -11,49 +11,18 @@
 """
 __all__ = [
     "markdownify",
-    "markdownify_fast",
-    "cleanup_code",
+    "markdownify_sharegpt",
 ]
 
 from ._builder import HTMLParserTreeBuilder_Fast, LXMLTreeBuilder_Fast
 from bs4 import BeautifulSoup, NavigableString
-from re import compile as RE_COMPILE, IGNORECASE as RE_IGNORECASE
-WHITESPACE_RE    = RE_COMPILE(r"[\t ]+")
-REMOVE_HTML_TAGS = RE_COMPILE("</?[a-z]{3,}[^>]{0,}>")
-CHECK_CODY_CODE  = RE_COMPILE(r'^[\s]{0,}(?:class="([^\s]{0,10})")?'\
-                              r'>?([^\s]{0,10})(?:copy[\s]{0,}code)+', flags = RE_IGNORECASE)
+from re import compile as RE_COMPILE
+WHITESPACE_RE = RE_COMPILE(r"[\t ]+")
 NEWLINE     = "\n"
 TAB         = "\t"
 SPEECH      = '"'
 SPEECH_RE   = r'\"'
-PRE_TAG     = "<pre"
-PRE_END_TAG = "</pre>"
 IS_NESTED_NODE_SET  = frozenset(('ol', 'ul', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',))
-
-def cleanup_code(text : str) -> str:
-    """ First cleanup code sections by deleting <span> <div> etc """
-    i = 0
-    while (code_start := text.find(PRE_TAG, i)) != -1:
-
-        start = code_start + len(PRE_TAG)
-        if (code_end := text.find(PRE_END_TAG, start)) == -1: break
-        code = REMOVE_HTML_TAGS.sub("", text[start : code_end])
-
-        """ Check if Copy Code exists """
-        if (attrs := CHECK_CODY_CODE.match(code)):
-            # pythonCopy Code takes priority over class="python"
-            language = attrs.group(2) or attrs.group(1) or ""
-            pre = f'<pre class="{language}">'
-            code = code[attrs.span(0)[1]:]
-        else:
-            pre = PRE_TAG
-        pass
-        
-        text = f"{text[:code_start]}{pre}{code}{text[code_end:]}"
-        i = code_start + len(pre) + len(code) + len(PRE_END_TAG)
-    pass
-    return text
-pass
 
 def convert_pre(el, text, as_inline):
     if not text: return ""
@@ -253,7 +222,7 @@ FUNCTIONS = {
     "p"          : lambda el, text, c: text if c else f"{text}\n",
 }
 
-def process_tag(node, as_inline, children_only = False):
+def process_tag(node, as_inline, children_only = False, clean_whitespaces = True):
     text = ""
     # markdown headings or cells can't include
     # block elements (elements w/newlines)
@@ -282,7 +251,7 @@ def process_tag(node, as_inline, children_only = False):
         if isinstance(el, NavigableString):
             text += process_text(el)
         else:
-            text += process_tag (el, convert_children_as_inline)
+            text += process_tag (el, convert_children_as_inline, False, clean_whitespaces)
 
     if not children_only and name in FUNCTIONS:
         text = FUNCTIONS[name](node, text, as_inline)
@@ -290,7 +259,7 @@ def process_tag(node, as_inline, children_only = False):
     return text
 pass
 
-def process_text(el):
+def process_text(el, clean_whitespaces = True):
     text = str(el)
     if not (parent := el.parent): return text
     name    = parent.name
@@ -299,7 +268,7 @@ def process_text(el):
     is_code = name == "code"
 
     # Dont remove any whitespace when handling pre or code in pre
-    if not (is_pre or (is_code and parent.parent.name == "pre")):
+    if clean_whitespaces and not (is_pre or (is_code and parent.parent.name == "pre")):
         text = WHITESPACE_RE.sub(" ", text)
 
     if not is_pre and not is_code:
@@ -315,14 +284,20 @@ def process_text(el):
     return text
 pass
 
-def markdownify_fast(text : str) -> str:
-    text = cleanup_code(text)
-    soup = BeautifulSoup(text, "lxml", builder = LXMLTreeBuilder_Fast)
-    return process_tag(soup, as_inline = False, children_only = True)
+def markdownify(text              : str,
+                fast              : bool = False,
+                clean_whitespaces : bool = True) -> str:
+    if fast:
+        soup = BeautifulSoup(text, "lxml",        builder = LXMLTreeBuilder_Fast)
+    else:
+        soup = BeautifulSoup(text, "html.parser", builder = HTMLParserTreeBuilder_Fast)
+    return process_tag(soup, as_inline = False, children_only = True, clean_whitespaces = clean_whitespaces)
 pass
 
-def markdownify(text : str) -> str:
-    text = cleanup_code(text)
-    soup = BeautifulSoup(text, "html.parser", builder = HTMLParserTreeBuilder_Fast)
-    return process_tag(soup, as_inline = False, children_only = True)
+def markdownify_sharegpt(text : str) -> str:
+    """
+        We must not remove multiple whitespaces due to code sections!
+    """
+    soup = BeautifulSoup(text, "lxml", builder = LXMLTreeBuilder_Fast)
+    return process_tag(soup, as_inline = False, children_only = True, clean_whitespaces = False)
 pass

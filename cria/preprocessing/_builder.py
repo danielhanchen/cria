@@ -9,10 +9,9 @@ __all__ = [
 
 NULL_FUNCTION = lambda *args: None
 
-from bs4.builder import ParserRejectedMarkup
 from bs4.builder._htmlparser import BeautifulSoupHTMLParser, HTMLParserTreeBuilder
 from bs4.builder._lxml import LXMLTreeBuilder, LXMLTreeBuilderForXML
-from lxml.etree import HTMLParser as LXMLHTMLParser, ParserError as LXMLParserError
+from lxml.etree import HTMLParser as LXMLHTMLParser
 
 class BeautifulSoupHTMLParser_Fast(BeautifulSoupHTMLParser):
     REPLACE = "ignore" # Default = replace. We follow LXML's default, which is ignore.
@@ -23,27 +22,16 @@ pass
 
 class HTMLParserTreeBuilder_Fast(HTMLParserTreeBuilder):
     def feed(self, markup):
-        args, kwargs = self.parser_args
         parser = BeautifulSoupHTMLParser_Fast()
         parser.soup = self.soup
-        try: parser.feed(markup)
-        except AssertionError as e: raise ParserRejectedMarkup(e)
+        parser.feed(markup)
         parser.close()
         parser.already_closed_empty_element = []
     pass
 pass
 
 
-from functools import partial
-from sys import maxsize as MAX_SIZE_T
-LXMLHTMLParser = partial(LXMLHTMLParser,
-                         recover           = True,
-                         remove_blank_text = True,
-                         remove_comments   = True,
-                         remove_pis        = True)
-
 class LXMLTreeBuilderForXML_Fast(LXMLTreeBuilderForXML):
-    CHUNK_SIZE = MAX_SIZE_T
     comment = NULL_FUNCTION
     doctype = NULL_FUNCTION
     pi      = NULL_FUNCTION
@@ -52,5 +40,15 @@ pass
 
 class LXMLTreeBuilder_Fast(LXMLTreeBuilder, LXMLTreeBuilderForXML_Fast):
     test_fragment_to_document = NULL_FUNCTION
-    default_parser = lambda *args: LXMLHTMLParser
+
+    def feed(self, markup):
+        parser = LXMLHTMLParser(encoding          = self.soup.original_encoding,
+                                recover           = True,
+                                remove_blank_text = True,
+                                remove_comments   = True,
+                                remove_pis        = True)
+        parser.feed(markup)
+        parser.close()
+        self.parser = parser
+    pass
 pass
