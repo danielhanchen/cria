@@ -28,9 +28,7 @@ def convert_pre(el, text, as_inline):
     if not text: return ""
     code_language = el.attrs.get("class")
     code_language = "" if not code_language else code_language[0]
-    newline = "" if text[-1] == "\n" else "\n"
-    return f"\n```{code_language}\n{text}{newline}```\n"
-
+    return f"\n```{code_language}\n{text.rstrip()}\n```\n"
 pass
 
 def convert_h1(el, text, as_inline):
