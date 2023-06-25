@@ -14,7 +14,7 @@ __all__ = [
 from typing import Callable, Sequence
 from tqdm import tqdm as ProgressBar
 from psutil import cpu_count as CPU_COUNT
-N_CPUS = CPU_COUNT(logical = False)
+N_CPUS = CPU_COUNT(logical = True)
 del CPU_COUNT
 from inspect import signature
 
@@ -60,7 +60,7 @@ def multithreading(download : Callable,
 pass
 
 
-from pathos.multiprocessing import ProcessPool
+from pathos.pools import ProcessPool
 
 def multiprocessing(process  : Callable,
                     data     : Sequence) -> Sequence:
@@ -78,15 +78,14 @@ def multiprocessing(process  : Callable,
     first_item = data[0]
     CHUNKSIZE = max(len(data) // N_CPUS, 1)
 
-    with ProcessPool(N_CPUS) as pool:
-        if PROCESS_SINGULAR:
-            all_datas = pool.imap(process,  data, chunksize = CHUNKSIZE)
-        else:
-            n_parameters = len(first_item)
-            data = [[x[p] for x in data] for p in range(n_parameters)]
-            all_datas = pool.imap(process, *data, chunksize = CHUNKSIZE)
-        pass
-        all_datas = list(ProgressBar(all_datas, total = n))
+    pool = ProcessPool(nodes = N_CPUS)
+    if PROCESS_SINGULAR:
+        all_datas = pool.imap(process, data, chunksize = CHUNKSIZE)
+    else:
+        n_parameters = len(first_item)
+        data = [[x[p] for x in data] for p in range(n_parameters)]
+        all_datas = pool.imap(process, *data, chunksize = CHUNKSIZE)
     pass
+    all_datas = list(ProgressBar(all_datas, total = n))
     return all_datas
 pass
