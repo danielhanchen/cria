@@ -76,15 +76,15 @@ def multiprocessing(process  : Callable,
     pass
 
     first_item = data[0]
-    CHUNKSIZE = max(len(data) // N_CPUS, 1)
+    # CHUNKSIZE = max(len(data) // N_CPUS, 1)
 
     pool = ProcessPool(nodes = N_CPUS)
     if PROCESS_SINGULAR:
-        all_datas = pool.imap(process, data, chunksize = CHUNKSIZE)
+        all_datas = pool.imap(process, data, chunksize = 1)
     else:
         n_parameters = len(first_item)
         data = [[x[p] for x in data] for p in range(n_parameters)]
-        all_datas = pool.imap(process, *data, chunksize = CHUNKSIZE)
+        all_datas = pool.imap(process, *data, chunksize = 1)
     pass
     all_datas = list(ProgressBar(all_datas, total = n))
     return all_datas
