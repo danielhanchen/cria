@@ -24,10 +24,42 @@ SPEECH      = '"'
 SPEECH_RE   = r'\"'
 IS_NESTED_NODE_SET  = frozenset(('ol', 'ul', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',))
 
+LANGUAGE_MAPPER = {
+    "js"           : "javascript",
+    "c++"          : "cpp",
+    "c#"           : "csharp",
+    "php-template" : "php",
+    "vba"          : "vbnet",
+    "vb"           : "vbnet",
+    "vb.net"       : "vbnet",
+    "{r}"          : "r",
+    "sh"           : "bash",
+    "shell"        : "bash",
+    "ts"           : "typescript",
+    "objc"         : "objectivec",
+    "py"           : "python",
+    "undefined"    : "undefined",
+    "text"         : "undefined",
+    "asm"          : "assembly",
+    "bat"          : "batch",
+    "golang"       : "go",
+    "mat"          : "matlab",
+    "md"           : "markdown",
+    "objective"    : "objectivec",
+    "pythonedit"   : "python",
+    "tsx"          : "typescript",
+    "yml"          : "yaml",
+}
+
 def convert_pre(el, text, as_inline):
     if not text: return ""
     code_language = el.attrs.get("class")
     code_language = "" if not code_language else code_language[0]
+
+    # Map language to a correct set of possible languages
+    if code_language in LANGUAGE_MAPPER:
+        code_language = LANGUAGE_MAPPER[code_language]
+    pass
     return f"\n```{code_language}\n{text.rstrip()}\n```\n"
 pass
 
